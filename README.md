@@ -23,6 +23,7 @@ Types are already provided.
 ```ts
 import StepMachine from 'step-foolish';
 
+// Some example state to represent a real-world application/component state.
 const state = {
   tosAccepted: false,
   requireDate: true,
@@ -124,7 +125,7 @@ const machine = new StepMachine([
       //                           `onLeave` function)
       //
       //   machine.completed    => a boolean; `true` if the current step is
-      //                           already completed upon entry
+      //                           completed at the time `onLeave` is called
       //
       if (!machine.completed) {
         popModal("Remember to come back and select a date!");
