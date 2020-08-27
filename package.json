@@ -1,6 +1,6 @@
 {
   "name": "step-foolish",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -24,5 +24,25 @@
     "jest": "^26.4.2",
     "ts-jest": "^26.3.0",
     "typescript": "^4.0.2"
-  }
+  },
+  "keywords": [
+    "step-foolish",
+    "stepfoolish",
+    "step foolish",
+    "step-wise",
+    "stepwise",
+    "step wise",
+    "step-machine",
+    "stepmachine",
+    "step machine",
+    "step",
+    "fsm",
+    "finite",
+    "state",
+    "machine",
+    "state machine",
+    "finite state machine",
+    "state management",
+    "workflow"
+  ]
 }
