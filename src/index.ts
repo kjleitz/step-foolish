@@ -1,5 +1,7 @@
 export interface GoToStepOptions {
-  immediate: boolean;
+  skipOnLeaveCurrentStep?: boolean;
+  skipOnEnterNextStep?: boolean;
+  fallBackToLastIncompleteDependency?: boolean;
 }
 
 export interface StepDefinition {
@@ -43,7 +45,6 @@ export class Step {
 }
 
 export default class StepMachine {
-  public enteredWithOptions: GoToStepOptions = { immediate: false };
   private steps: Step[];
   private previousStepInstance: Step | null = null;
   private currentStepInstance: Step | null = null;
@@ -69,25 +70,46 @@ export default class StepMachine {
     return this.currentStepInstance ? this.currentStepInstance.completedIf() : true;
   }
 
-  // TODO: go to the last "completed" step in the dependency list if they're not
-  //       all satisfied.
-  // TODO: do nothing if the `stepName` is the same as `this.currentStep`
-  goTo(stepName: string, options: Partial<GoToStepOptions> = {}): void {
+  goTo(stepName: string, { skipOnLeaveCurrentStep = false, skipOnEnterNextStep = false, fallBackToLastIncompleteDependency = true }: GoToStepOptions = {}): void {
+    if (stepName === this.currentStep) return;
+
     const nextStepInstance = this.stepFor(stepName);
     const dependencySteps = this.dependencyStepsFor(nextStepInstance);
-    const dependenciesSatisfied = dependencySteps.every(step => step.completedIf());
-    if (!dependenciesSatisfied) return;
-    
+
+    // if any of the dependencies are incomplete, we'll want to fall back to
+    // the last "incomplete" dependency (or bail if the caller has provided the
+    // `fallBackToLastIncompleteDependency: false` option)
+    for (let i = 0; i < dependencySteps.length; i++) {
+      const dependencyStep = dependencySteps[i];
+      const completed = dependencyStep.completedIf();
+      if (completed) continue;
+
+      if (fallBackToLastIncompleteDependency) {
+        this.goTo(dependencyStep.name, {
+          skipOnLeaveCurrentStep,
+          skipOnEnterNextStep,
+          fallBackToLastIncompleteDependency,
+        });
+      }
+
+      return;
+    }
+
     this.nextStepInstance = nextStepInstance;
-    if (this.currentStepInstance && !options.immediate) {
+    if (this.currentStepInstance && !skipOnLeaveCurrentStep) {
+      // if we're leaving a step and `skipOnLeaveCurrentStep: true` hasn't been
+      // provided, we should invoke the `onLeave` callback for the current step
       this.currentStepInstance.onLeave(this);
     }
 
     this.previousStepInstance = this.currentStepInstance;
     this.currentStepInstance = nextStepInstance;
     this.nextStepInstance = null;
-    this.enteredWithOptions = { immediate: !!options.immediate };
-    nextStepInstance.onEnter(this);
+    if (!skipOnEnterNextStep) {
+      // since we're entering a step and `skipOnEnterNextStep: true` hasn't been
+      // provided, we should invoke the `onEnter` callback for the next step
+      nextStepInstance.onEnter(this);
+    }
   }
 
   private stepFor(stepName: string): Step {
@@ -105,103 +127,7 @@ export default class StepMachine {
       const dependencyStep = this.stepFor(stepName);
 
       const nestedDependencySteps = this.dependencyStepsFor(dependencyStep, seen);
-      return [...memo, dependencyStep, ...nestedDependencySteps];
+      return [...memo, ...nestedDependencySteps, dependencyStep];
     }, [] as Step[]);
   }
 }
-
-// let tosAccepted = false;
-// let requireDate = false;
-// let dateSelected = false;
-// let timeSelected = false;
-// const showTos = () => console.log('showTos');
-// const hideTos = () => console.log('hideTos');
-// const popModal = str => console.log('popModal:', str);
-// const initDateSelect = () => console.log('initDateSelect');
-// const tearDownDateSelect = () => console.log('tearDownDateSelect');
-// const initTimeSelect = () => console.log('initTimeSelect');
-// const tearDownTimeSelect = () => console.log('tearDownTimeSelect');
-
-// const machine = new StepMachine([
-//   {
-//     step: 'termsOfService',
-
-//     completedIf: () => {
-//       return tosAccepted;
-//     },
-
-//     onEnter: (machine) => {
-//       showTos();
-//     },
-
-//     onLeave: (machine) => {
-//       hideTos();
-//     },
-//   },
-//   {
-//     step: 'rejectedTermsOfService',
-
-//     onEnter: (machine) => {
-//       popModal("You must accept the terms of service to continue");
-//     },
-//   },
-//   {
-//     step: 'date',
-
-//     dependencies: [
-//       'termsOfService',
-//     ],
-
-//     completedIf: () => {
-//       return dateSelected;
-//     },
-
-//     onEnter: (machine) => {
-//       if (machine.completed) {
-//         machine.goTo('time', { immediate: true });
-//       } else {
-//         initDateSelect();
-//       }
-//     },
-
-//     onLeave: (machine) => {
-//       tearDownDateSelect();
-//     },
-//   },
-//   {
-//     step: 'time',
-
-//     dependencies: () => {
-//       return requireDate ? ['termsOfService', 'date'] : ['date'];
-//     },
-
-//     completedIf: () => {
-//       return timeSelected;
-//     },
-
-//     onEnter: (machine) => {
-//       if (machine.completed) {
-//         machine.goTo('finished', { immediate: true });
-//       } else {
-//         initTimeSelect();
-//       }
-//     },
-
-//     onLeave: (machine) => {
-//       tearDownTimeSelect();
-//     },
-//   },
-//   {
-//     step: 'finished',
-
-//     dependencies: [
-//       'termsOfService',
-//       'date',
-//       'time',
-//     ],
-
-//     onEnter: (machine) => {
-//       popModal("You're finished!");
-//     },
-//   },
-// ]);
