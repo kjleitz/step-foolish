@@ -1,6 +1,6 @@
 {
   "name": "step-foolish",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
@@ -36,6 +36,7 @@
     "stepmachine",
     "step machine",
     "step",
+    "steps",
     "fsm",
     "finite",
     "state",
@@ -43,6 +44,8 @@
     "state machine",
     "finite state machine",
     "state management",
+    "state manager",
+    "state manage",
     "workflow"
   ]
 }
