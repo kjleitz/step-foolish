@@ -21,6 +21,8 @@ Types are already provided.
 ## Example usage
 
 ```ts
+import StepMachine from 'step-foolish';
+
 const state = {
   tosAccepted: false,
   requireDate: true,
